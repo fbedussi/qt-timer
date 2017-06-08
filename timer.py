@@ -44,15 +44,15 @@ class MainWindow(QtGui.QMainWindow):
         buttonContainer.setSpacing(10)
         vBox.addLayout(buttonContainer)
 
-        self.startBtn = QtGui.QPushButton('Start', cWidget)
-        self.startBtn.clicked.connect(self.start)
+        self.startBtn = QtGui.QPushButton('start', cWidget)
+        self.startBtn.clicked.connect(self.toggle)
         buttonContainer.addWidget(self.startBtn)
 
-        self.stopBtn = QtGui.QPushButton('Stop', cWidget)
-        self.stopBtn.clicked.connect(self.stop)
-        buttonContainer.addWidget(self.stopBtn)
+        # self.stopBtn = QtGui.QPushButton('Stop', cWidget)
+        # self.stopBtn.clicked.connect(self.stop)
+        # buttonContainer.addWidget(self.stopBtn)
 
-        self.resetBtn = QtGui.QPushButton('Reset', cWidget)
+        self.resetBtn = QtGui.QPushButton('reset', cWidget)
         self.resetBtn.clicked.connect(self.reset)
         buttonContainer.addWidget(self.resetBtn)
 
@@ -65,9 +65,10 @@ class MainWindow(QtGui.QMainWindow):
         self.mode = 'chrono'
 
     def reset(self, checked):
-        self.stop(self)
+        self.stop()
         self.s = 0
         self.m = 0
+        self.mode = 'chrono'
         self.startMin.setValue(0)
         self.startSec.setValue(0)
         self.clockDisplay.setText('0:00')
@@ -90,21 +91,29 @@ class MainWindow(QtGui.QMainWindow):
         if self.m > 0 or self.s > 0:
             self.clock.start()
 
-    def start(self, checked):
+    def start(self):
         if self.startSec.value() != 0 or self.startMin.value() != 0:
             self.mode = 'timer'
             self.m = self.startMin.value()
             self.s = self.startSec.value()
 
         print('start, mode: ', self.mode)
-
+        self.startBtn.setText('stop')
         self.clock = threading.Timer(1, self.updateClock)
         self.clock.start()
 
-    def stop(self, checked):
+    def stop(self):
         print('stop')
+        self.startBtn.setText('start')
+        if self.clock:
+            self.clock.cancel()
+            self.clock = None
 
-        self.clock.cancel()
+    def toggle(self, checked):
+        if self.clock:
+            self.stop()
+        else:
+            self.start()
 
 app = QtGui.QApplication(sys.argv)
 main = MainWindow()
