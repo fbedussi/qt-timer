@@ -14,14 +14,26 @@ class MainWindow(QtGui.QMainWindow):
         cWidget = QtGui.QWidget(self)
 
         vBox = QtGui.QVBoxLayout()
-        vBox.setSpacing(2)
+        vBox.setSpacing(10)
 
-        # startLabel = QtGui.QLabel('Start time', cWidget)
-        # vBox.addWidget(startLabel)
+        inputWrapper = QtGui.QHBoxLayout()
+        inputWrapper.setSpacing(10)
+        vBox.addLayout(inputWrapper)
+        minWrapper = QtGui.QVBoxLayout()
+        secWrapper = QtGui.QVBoxLayout()
+        inputWrapper.addLayout(minWrapper)
+        inputWrapper.addLayout(secWrapper)
 
-        # self.inputNumber = QtGui.QSpinBox(cWidget)
-        # vBox.addWidget(self.inputNumber)
+        startMinLabel = QtGui.QLabel('Minutes', cWidget)
+        minWrapper.addWidget(startMinLabel)
+        self.startMin = QtGui.QSpinBox(cWidget)
+        minWrapper.addWidget(self.startMin)
 
+        startSecLabel = QtGui.QLabel('Seconds', cWidget)
+        secWrapper.addWidget(startSecLabel)
+        self.startSec = QtGui.QSpinBox(cWidget)
+        secWrapper.addWidget(self.startSec)
+        
         timeLabel = QtGui.QLabel('Time', cWidget)
         vBox.addWidget(timeLabel)
         self.clockDisplay = QtGui.QLabel('0:00', cWidget)
@@ -56,34 +68,43 @@ class MainWindow(QtGui.QMainWindow):
         self.stop(self)
         self.s = 0
         self.m = 0
-        #self.inputNumber.setValue(0)
+        self.startMin.setValue(0)
+        self.startSec.setValue(0)
         self.clockDisplay.setText('0:00')
 
     def updateClock(self):
+        if self.mode == 'chrono':
             self.s += 1
             if self.s == 60:
                 self.m += 1
                 self.s = 0
+        else:
+            self.s -= 1
+            if self.s < 0:
+                self.m -= 1
+                self.s = 59
 
-            txt = str(self.m) + ':' + str(self.s).zfill(2)
-            self.clockDisplay.setText(txt)
-            self.clock = threading.Timer(1, self.updateClock)
+        txt = str(self.m) + ':' + str(self.s).zfill(2)
+        self.clockDisplay.setText(txt)
+        self.clock = threading.Timer(1, self.updateClock)
+        if self.m > 0 or self.s > 0:
             self.clock.start()
 
     def start(self, checked):
-        print('start')
-        # self. = self.inputNumber.value()
-        # if self.m > 
+        if self.startSec.value() != 0 or self.startMin.value() != 0:
+            self.mode = 'timer'
+            self.m = self.startMin.value()
+            self.s = self.startSec.value()
+
+        print('start, mode: ', self.mode)
 
         self.clock = threading.Timer(1, self.updateClock)
         self.clock.start()
-    
+
     def stop(self, checked):
         print('stop')
 
         self.clock.cancel()
-        
-
 
 app = QtGui.QApplication(sys.argv)
 main = MainWindow()
