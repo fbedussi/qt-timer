@@ -2,19 +2,25 @@
 
 import sys
 import threading
+import os.path as osp
 
-from PyQt4 import QtGui, QtCore
+path = osp.join(osp.dirname(sys.executable), 'timer-icon.ico')
 
+from PyQt4 import QtGui
 
-class MainWindow(QtGui.QMainWindow):
-    
+class Timer(QtGui.QMainWindow):
+    """A simple timer/chronometer"""
+
     def __init__(self):
         QtGui.QMainWindow.__init__(self)
         self.setWindowTitle('Timer')
+        self.setWindowIcon(QtGui.QIcon(path))
         cWidget = QtGui.QWidget(self)
+        self.setCentralWidget(cWidget)
 
         vBox = QtGui.QVBoxLayout()
         vBox.setSpacing(10)
+        cWidget.setLayout(vBox)
 
         inputWrapper = QtGui.QHBoxLayout()
         inputWrapper.setSpacing(10)
@@ -33,10 +39,10 @@ class MainWindow(QtGui.QMainWindow):
         secWrapper.addWidget(startSecLabel)
         self.startSec = QtGui.QSpinBox(cWidget)
         secWrapper.addWidget(self.startSec)
-        
+
         timeLabel = QtGui.QLabel('Time', cWidget)
         vBox.addWidget(timeLabel)
-        self.clockDisplay = QtGui.QLabel('0:00', cWidget)
+        self.clockDisplay = QtGui.QLabel('00:00', cWidget)
         self.clockDisplay.setFont(QtGui.QFont('SansSerif', 20))
         vBox.addWidget(self.clockDisplay)
 
@@ -48,54 +54,43 @@ class MainWindow(QtGui.QMainWindow):
         self.startBtn.clicked.connect(self.toggle)
         buttonContainer.addWidget(self.startBtn)
 
-        # self.stopBtn = QtGui.QPushButton('Stop', cWidget)
-        # self.stopBtn.clicked.connect(self.stop)
-        # buttonContainer.addWidget(self.stopBtn)
-
         self.resetBtn = QtGui.QPushButton('reset', cWidget)
         self.resetBtn.clicked.connect(self.reset)
         buttonContainer.addWidget(self.resetBtn)
 
-        cWidget.setLayout(vBox)
-        self.setCentralWidget(cWidget)
-
         self.s = 0
-        self.m = 0
         self.clock = None
         self.mode = 'chrono'
 
-    def reset(self, checked):
+    def reset(self):
         self.stop()
         self.s = 0
-        self.m = 0
         self.mode = 'chrono'
         self.startMin.setValue(0)
         self.startSec.setValue(0)
-        self.clockDisplay.setText('0:00')
+        self.clockDisplay.setText('00:00')
 
     def updateClock(self):
         if self.mode == 'chrono':
             self.s += 1
-            if self.s == 60:
-                self.m += 1
-                self.s = 0
         else:
             self.s -= 1
-            if self.s < 0:
-                self.m -= 1
-                self.s = 59
 
-        txt = str(self.m) + ':' + str(self.s).zfill(2)
+        m, s = divmod(self.s, 60)
+        h, m = divmod(m, 60)
+        txt = "%02d:%02d" % (m, s)
+        if h > 0:
+            txt = "%d:" % (h) + txt
+
         self.clockDisplay.setText(txt)
         self.clock = threading.Timer(1, self.updateClock)
-        if self.m > 0 or self.s > 0:
+        if self.s > 0:
             self.clock.start()
 
     def start(self):
         if self.startSec.value() != 0 or self.startMin.value() != 0:
             self.mode = 'timer'
-            self.m = self.startMin.value()
-            self.s = self.startSec.value()
+            self.s = self.startMin.value() * 60 + self.startSec.value()
 
         print('start, mode: ', self.mode)
         self.startBtn.setText('stop')
@@ -109,13 +104,13 @@ class MainWindow(QtGui.QMainWindow):
             self.clock.cancel()
             self.clock = None
 
-    def toggle(self, checked):
+    def toggle(self):
         if self.clock:
             self.stop()
         else:
             self.start()
 
 app = QtGui.QApplication(sys.argv)
-main = MainWindow()
+main = Timer()
 main.show()
 sys.exit(app.exec_())
